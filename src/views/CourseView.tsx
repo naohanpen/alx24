@@ -20,6 +20,7 @@ export const CourseView: FC<{
   const courses = loadCourses();
   const tabs = getCourseViewTabs(courses, selectedCourses);
   const [activeTab, setActiveTab] = useState<string>("");
+  const [activeTabPath, setActiveTabPath] = useState<string[]>([]);
   const [highlightedCourse, setHighlightedCourse] = useState<string | null>(null);
 
   const onCourseClick = (course: Course, newTag: CourseViewItemTag) => {
@@ -30,8 +31,9 @@ export const CourseView: FC<{
   const onCourseSearch = (course: Course) => {
     const tabPath = findCourseTabPath(course.code, tabs);
     if (tabPath && tabPath.length > 0) {
-      // Switch to the main tab first
+      // Switch to the main tab and store the full path
       setActiveTab(tabPath[0]);
+      setActiveTabPath(tabPath);
       setHighlightedCourse(course.code);
       
       // Clear highlight after a few seconds
@@ -51,10 +53,17 @@ export const CourseView: FC<{
     }
   }, [activeTab, highlightedCourse, tabs]);
 
+  // Clear active tab path when active tab changes manually
+  useEffect(() => {
+    if (activeTabPath.length > 0 && activeTabPath[0] !== activeTab) {
+      setActiveTabPath([]);
+    }
+  }, [activeTab, activeTabPath]);
+
   const tabViews = [];
   const contents = [];
   for (const tab of tabs) {
-    const [tabView, content] = genInnerCourseView(tab, onCourseClick, highlightedCourse);
+    const [tabView, content] = genInnerCourseView(tab, onCourseClick, highlightedCourse, activeTabPath.slice(1));
     tabViews.push(tabView);
     contents.push(content);
   }
@@ -88,6 +97,7 @@ function genInnerCourseView(
   tab: CourseViewTab,
   onCourseClick: (course: Course, tag: CourseViewItemTag) => void,
   highlightedCourse?: string | null,
+  activeSubTabPath?: string[],
 ): [JSX.Element, JSX.Element] {
   const tabView = (
     <TabsTrigger key={tab.name} value={tab.name} disabled={tab.isDisabled}>
@@ -113,16 +123,27 @@ function genInnerCourseView(
   const tabViews = [];
   const contents = [];
   for (const childItem of tab.children) {
-    const [tabView, content] = genInnerCourseView(childItem, onCourseClick, highlightedCourse);
+    const [tabView, content] = genInnerCourseView(
+      childItem, 
+      onCourseClick, 
+      highlightedCourse, 
+      activeSubTabPath && activeSubTabPath.length > 0 ? activeSubTabPath.slice(1) : undefined
+    );
     tabViews.push(tabView);
     contents.push(content);
   }
 
   const defaultTab = tabViews.find((tabView) => !tabView.props.disabled)?.props
     .value;
+  
+  // Use activeSubTabPath to determine which tab should be active
+  const currentActiveTab = activeSubTabPath && activeSubTabPath.length > 0 
+    ? activeSubTabPath[0] 
+    : defaultTab;
+
   const content = (
     <TabsContent key={tab.name} value={tab.name}>
-      <Tabs defaultValue={defaultTab}>
+      <Tabs value={currentActiveTab}>
         <TabsList className="w-full justify-start overflow-x-scroll">
           {tabViews}
         </TabsList>
