@@ -74,6 +74,27 @@ export function getCourseViewTabs(
   return items;
 }
 
+export function findCourseTabPath(
+  courseCode: CourseCode,
+  tabs: Array<CourseViewTab>,
+): string[] | null {
+  for (const tab of tabs) {
+    // Check if course is in this tab's items
+    if (tab.items.some((item) => item.code === courseCode)) {
+      return [tab.name];
+    }
+    
+    // Check children tabs recursively
+    if (tab.children.length > 0) {
+      const childPath = findCourseTabPath(courseCode, tab.children);
+      if (childPath) {
+        return [tab.name, ...childPath];
+      }
+    }
+  }
+  return null;
+}
+
 function doGetCourseViewTabs(
   courses: Array<Course>,
   selectedCourses: SelectedCourses,

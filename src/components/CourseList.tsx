@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 export interface CourseListProps {
   items: Array<CourseViewItem>;
   onCourseClick: (course: Course, newTag: CourseViewItemTag) => void;
+  highlightedCourse?: string | null;
 }
 
 export function CourseList(props: CourseListProps) {
@@ -18,6 +19,7 @@ export function CourseList(props: CourseListProps) {
           key={item.code}
           item={item}
           onClick={props.onCourseClick}
+          isHighlighted={props.highlightedCourse === item.code}
         />
       ))}
     </div>
@@ -27,6 +29,7 @@ export function CourseList(props: CourseListProps) {
 interface CourseListItemProps {
   item: CourseViewItem;
   onClick: (course: Course, newTag: CourseViewItemTag) => void;
+  isHighlighted?: boolean;
 }
 
 function CourseListItem(props: CourseListItemProps) {
@@ -43,6 +46,7 @@ function CourseListItem(props: CourseListItemProps) {
       className={cn(
         "flex items-center border-l-4 px-1",
         tagColors[props.item.tag],
+        props.isHighlighted && "bg-yellow-100 ring-2 ring-yellow-300",
       )}
     >
       <SyllabusLink code={props.item.code}>
